@@ -29,7 +29,11 @@ Este repositório contém o backend do projeto SAUDE-IOT, implementado em Python
 
 Certifique-se de ter o **Python 3.9+** instalado na sua máquina.
 
-## Primeiros Passos
+
+
+# Primeiros Passos
+
+
 
 Siga as instruções abaixo para configurar e iniciar o servidor de desenvolvimento.
 
@@ -39,7 +43,7 @@ Abra o seu terminal e execute os comandos para clonar o projeto e mudar para a b
 
 ```bash
 # 1. Clone o repositório
-git clone https://"endereço do repositório"
+git clone https://github.com/welsondeivid/Saude-IOT/
 
 # 2. Acesse a pasta do projeto
 cd SAUDE-IOT
