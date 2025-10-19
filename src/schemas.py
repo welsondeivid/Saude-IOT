@@ -1,24 +1,28 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import List, Dict
 
-# ----------------------------------------------------------------------
-# ESQUEMAS DE ENTRADA (Input - O que a equipe de IoT envia)
-# ----------------------------------------------------------------------
+class ClimaSchema(BaseModel):
+    temperatura_ar: float
+    umidade_relativa: float
+    precipitacao: float
+    cobertura_vegetal: float
 
-class SensorDataCreate(BaseModel):
-    # Campos que esperamos receber no POST/JSON
-    sensor_id: str
-    temperatura: float
+class QualidadeArSchema(BaseModel):
+    material_particulado_pm25: float
+    monoxido_carbono: float
+
+class QualidadeAguaSchema(BaseModel):
+    ph_agua: float
+    turbidez: float
+    coliformes_totais: int
+    cloro_residual: float
+
+class MedicaoSchema(BaseModel):
     timestamp: datetime
+    clima: ClimaSchema
+    qualidade_do_ar: QualidadeArSchema
+    qualidade_da_agua: QualidadeAguaSchema
 
-# ----------------------------------------------------------------------
-# ESQUEMAS DE SAÍDA (Output - O que o front recebe)
-# ----------------------------------------------------------------------
-
-class SensorData(SensorDataCreate):
-    # Inclui o ID gerado pelo banco de dados
-    id: int
-
-    # Configuração necessária para o Pydantic ler os objetos do SQLAlchemy
-    class Config:
-        from_attributes = True
+class DadosBairroSchema(BaseModel):
+    bairros: Dict[str, List[MedicaoSchema]]
