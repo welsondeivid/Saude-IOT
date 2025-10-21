@@ -4,10 +4,45 @@ from sqlalchemy import desc, func
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import models, schemas
-from .database import engine, get_db
+from .database import engine, get_db, SessionLocal
 
 # Cria as tabelas no banco de dados (SQLite) se elas não existirem
 models.Base.metadata.create_all(bind=engine) 
+
+# ======================================================================
+# FUNÇÃO PARA POPULAR O BANCO DE DADOS NA INICIALIZAÇÃO (CORRIGIDA)
+# ======================================================================
+def popular_dados_iniciais(db: Session):
+    # Apenas executa se a tabela Categoria estiver vazia
+    if db.query(models.Categoria).count() == 0:
+        print("Populando tabelas Categoria e Indicador...")
+
+        # --- Cria as Categorias ---
+        cat_clima = models.Categoria(nome="Clima")
+        cat_ar = models.Categoria(nome="Qualidade do Ar")
+        cat_agua = models.Categoria(nome="Qualidade da Agua")
+        db.add_all([cat_clima, cat_ar, cat_agua])
+        db.commit()
+
+        # --- Cria os Indicadores ---
+        # (Usa os objetos de categoria que acabamos de criar para obter os IDs)
+        indicadores = [
+            models.Indicador(nome="temperatura_ar", unidade_medida="°C", categoria=cat_clima),
+            models.Indicador(nome="umidade_relativa", unidade_medida="%", categoria=cat_clima),
+            models.Indicador(nome="precipitacao", unidade_medida="mm", categoria=cat_clima),
+            models.Indicador(nome="cobertura_vegetal", unidade_medida="%", categoria=cat_clima),
+            
+            models.Indicador(nome="material_particulado_pm25", unidade_medida="µg/m³", categoria=cat_ar),
+            models.Indicador(nome="monoxido_carbono", unidade_medida="ppm", categoria=cat_ar),
+
+            models.Indicador(nome="ph_agua", unidade_medida="pH", categoria=cat_agua),
+            models.Indicador(nome="turbidez", unidade_medida="NTU", categoria=cat_agua),
+            models.Indicador(nome="coliformes_totais", unidade_medida="NMP/100ml", categoria=cat_agua),
+            models.Indicador(nome="cloro_residual", unidade_medida="mg/L", categoria=cat_agua),
+        ]
+        db.add_all(indicadores)
+        db.commit()
+        print("Dados iniciais populados com sucesso!")
 
 # ----------------------------------------------------------------------
 # FUNÇÕES DE PROCESSAMENTO E CÁLCULO (LÓGICA DE NEGÓCIO)
@@ -33,6 +68,16 @@ def calcular_medias_diarias(db: Session):
     return resultados_consulta
 
 app = FastAPI(title="IoT Microservice API")
+
+@app.on_event("startup")
+def on_startup():
+    # Cria uma nova sessão de DB apenas para a inicialização
+    db = SessionLocal()
+    try:
+        popular_dados_iniciais(db)
+    finally:
+        # Fecha a sessão após o uso
+        db.close()
 
 # --- Configuração CORS (Essencial para o Frontend React) ---
 # Permite que o frontend (ex: rodando na porta 3000) acesse o backend
@@ -154,37 +199,40 @@ def obter_relatorio_diario(db: Session = Depends(get_db)):
     Endpoint principal que calcula as médias diárias dos indicadores por bairro,
     infere riscos e retorna um relatório completo.
     """
-    # 1. Busca os dados já calculados do banco
+    # 1. (CORREÇÃO) Busca as categorias do banco para criar um mapa dinâmico.
+    # Isso evita o erro de IDs fixos (hardcoded).
+    categorias_db = db.query(models.Categoria).all()
+    categoria_map = {
+        cat.id_categoria: cat.nome.lower().replace(" ", "_") for cat in categorias_db
+    } # Ex: {1: 'clima', 2: 'qualidade_do_ar'}
+
+    # 2. Busca os dados já calculados do banco
     medias_calculadas = calcular_medias_diarias(db)
 
-    # 2. Estrutura os dados no formato JSON desejado
+    # 3. Estrutura os dados no formato JSON desejado
     relatorio_final = {}
     for bairro, data, indicador, id_cat, media in medias_calculadas:
-        data_str = data.strftime("%Y-%m-%d")
+        data_str = data
 
         # Cria as chaves do dicionário se não existirem
         relatorio_final.setdefault(bairro, {}).setdefault(data_str, {
             'clima': {}, 'qualidade_do_ar': {}, 'qualidade_da_agua': {}
         })
 
-        # Mapeia o indicador para a categoria correta.
-        # ASSUMINDO: id_categoria 1=Clima, 2=Qualidade do Ar, 3=Qualidade da Água
-        categoria_map = {1: 'clima', 2: 'qualidade_do_ar', 3: 'qualidade_da_agua'}
+        # Mapeia o indicador para a categoria correta usando o mapa dinâmico
         nome_categoria = categoria_map.get(id_cat, 'desconhecida')
 
         if nome_categoria != 'desconhecida':
-            if indicador == 'coliformes_totais':
-                relatorio_final[bairro][data_str][nome_categoria][indicador] = int(media)
-            else:
-                relatorio_final[bairro][data_str][nome_categoria][indicador] = round(media, 2)
+            # Converte para inteiro se for o caso, senão arredonda para 2 casas decimais
+            valor_final = int(media) if indicador == 'coliformes_totais' else round(media, 2)
+            relatorio_final[bairro][data_str][nome_categoria][indicador] = valor_final
             
-    # 3. Adiciona a análise de riscos em cada registro diário
+    # 4. Adiciona a análise de riscos em cada registro diário
     for bairro, dias in relatorio_final.items():
         for dia, dados_diarios in dias.items():
             relatorio_final[bairro][dia]['riscos'] = inferir_riscos(dados_diarios)
 
     return {"bairros": relatorio_final}
-
 # Rota de Status Simples
 @app.get("/")
 def read_root():
