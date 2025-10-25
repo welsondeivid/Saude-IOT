@@ -14,12 +14,14 @@ Este backend é o componente central da arquitetura, responsável por:
 
 ## 🛠️ Tecnologias Utilizadas
 
-* **Linguagem**: Python 3.9+
-* **Framework da API**: [FastAPI](https://fastapi.tiangolo.com/)
-* **Banco de Dados**: [SQLite](https://www.sqlite.org/index.html)
-* **ORM**: [SQLAlchemy](https://www.sqlalchemy.org/)
-* **Validação de Dados**: [Pydantic](https://docs.pydantic.dev/)
-* **Servidor ASGI**: [Uvicorn](https://www.uvicorn.org/)
+- **Linguagem**: Python 3.10+
+- **Framework da API**: FastAPI
+- **Banco de Dados**: SQLite
+- **ORM**: SQLAlchemy
+- **Validação de Dados**: Pydantic
+- **Servidor ASGI**: Uvicorn
+- **GUI**: Tkinter
+- **HTTP Requests**: Requests
 
 ---
 
@@ -50,7 +52,7 @@ source venv/bin/activate
 
 ### 3. Instalação e Inicialização
 
-O projeto inclui um script para facilitar a instalação e inicialização.
+O projeto inclui dois scripts para facilitar a instalação e inicialização.
 
 ```bash
 # No macOS/Linux, conceda permissão de execução primeiro:
@@ -58,6 +60,15 @@ chmod +x start.sh
 
 # No Windows, instale as dependências e inicie o servidor:
 ./start.sh
+```
+
+Após isso, abra outra janela ou split o terminal, também precisa ser bash, para iniciar o simulador IOT
+```bash
+# No macOS/Linux, conceda permissão de execução primeiro:
+chmod +x start.sh
+
+# No Windows, instale as dependências e inicie o servidor:
+./gui.sh
 ```
 
 Após a execução, o servidor estará rodando em http://127.0.0.1:8000
