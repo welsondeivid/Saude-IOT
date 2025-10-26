@@ -33,7 +33,6 @@ class RelatorioService(saude_pb2_grpc.RelatorioServiceServicer):
             logging.error(f"Falha HTTP: {e}")
             context.abort(grpc.StatusCode.UNAVAILABLE, f"Falha ao buscar HTTP: {e}")
 
-        # Repasse direto do JSON para Struct (sem transformações)
         s = struct_pb2.Struct()
         s.update(data)
         logging.info("Relatório obtido e repassado via gRPC.")
