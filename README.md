@@ -97,11 +97,10 @@ No Windows ou linux:
 
 3) Importe o arquivo .proto
 - Clique em “Import .proto”.
-- Selecione: `proto/saude.proto`.
+- Selecione: `proto/saude.proto` na pasta proto do projeto.
 - O Postman resolve automaticamente `google/protobuf/struct.proto` nas versões recentes.
 
 4) Selecione o serviço e método
-- Service: `saude.RelatorioService`
 
 
 ## 📖 Documentação da API
