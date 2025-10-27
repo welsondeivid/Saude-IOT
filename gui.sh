@@ -5,4 +5,4 @@
 cd "$(dirname "$0")/src" || exit 1
 
 # Executa a GUI
-python -m middlend.gui
+python -m data_generator.gui
