@@ -7,10 +7,12 @@ Este repositório contém o backend do projeto **Saúde IoT**, uma API de micros
 O **Saúde IoT** é um sistema distribuído que visa agregar dados de sensores IoT e fontes públicas para gerar insights que auxiliem gestores públicos na formulação de políticas de saúde.
 
 Este backend é o componente central da arquitetura, responsável por:
-1.  **Receber** dados de medição enviados por dispositivos IoT.
-2.  **Armazenar** os dados de forma estruturada em um banco de dados.
-3.  **Processar** e **analisar** os dados para calcular médias diárias e inferir riscos.
-4.  **Expor** os resultados através de um endpoint para ser consumido por um frontend de visualização.
+
+1.  **Autenticar** usuários e dispositivos através de tokens JWT.
+2.  **Receber** dados de medição enviados por dispositivos IoT.
+3.  **Armazenar** os dados de forma estruturada em um banco de dados.
+4.  **Processar** e **analisar** os dados para calcular médias diárias e inferir riscos.
+5.  **Expor** os resultados através de um endpoint para ser consumido por um frontend de visualização.
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -20,6 +22,8 @@ Este backend é o componente central da arquitetura, responsável por:
 * **ORM**: [SQLAlchemy](https://www.sqlalchemy.org/)
 * **Validação de Dados**: [Pydantic](https://docs.pydantic.dev/)
 * **Servidor ASGI**: [Uvicorn](https://www.uvicorn.org/)
+* Autenticação: JWT (JSON Web Tokens) com `python-jose`
+* Criptografia de Senha: passlib com `bcrypt`
 
 ---
 
@@ -172,6 +176,95 @@ json
 }
 ```
 
+# Guia para Desenvolvedores
+-------------------------
+
+Com a implementação da autenticação, o fluxo de interação com a API mudou. Todas as rotas de dados agora são protegidas.
+
+### 🔐 Fluxo de Autenticação (Obrigatório)
+
+1.  **Crie um usuário**: Use o endpoint POST /users/ para registrar um novo usuário e senha.
+    
+2.  **Faça Login**: Envie o usuário e senha para o endpoint POST /token para receber um access\_token.
+    
+3.  **Acesse as Rotas Protegidas**: Inclua o token recebido no cabeçalho (Header) de todas as requisições futuras para as rotas de dados.
+    
+    *   **Header**: `Authorization: Bearer <SEU_TOKEN_AQUI>`
+        
+
+### Criando um Usuário
+
+Para interagir com a API, primeiro você precisa de um usuário.
+
+**Endpoint**: `POST /users/`
+
+#### Formato do JSON:
+
+JSON
+```
+{
+  "username": "seu_usuario",
+  "password": "sua_senha_segura"
+}
+```
+
+Se a criação for bem-sucedida, a API retornará o nome de usuário criado com o código 200.
+
+### 🔹 Obtendo um Token de Acesso (Login)
+
+**Endpoint**: `POST /token`
+
+Este endpoint usa o formato form-data (não JSON).
+
+#### Formato do form-data:
+
+*   username: seu\_usuario
+    
+*   password: sua\_senha\_segura
+    
+
+Se as credenciais estiverem corretas, a API retornará o token de acesso:
+
+JSON
+```
+"access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",    "token_type": "bearer"  }   `
+```
+**Copie o valor de access\_token para usar nos passos seguintes.**
+
+### 🔹 Para o Time de IoT (Enviando Dados)
+
+Seu papel é enviar os dados coletados pelos sensores para o nosso endpoint de ingestão, **agora com autenticação**.
+
+**Endpoint**: POST /importar-dados/
+
+#### Requisitos:
+
+*   **Header de Autenticação**: Authorization: Bearer
+    
+*   **Corpo da Requisição (JSON)**: O mesmo formato de antes.
+    
+
+Se os dados forem enviados corretamente, a API retornará:
+
+JSON
+```
+{"status": "Dados importados com sucesso!"}
+```
+
+Com o código 200. Caso o token seja inválido ou não seja fornecido, a API retornará 401 Unauthorized.
+
+### Para o Time de Frontend (Consumindo Dados)
+
+Seu papel é buscar os dados processados para exibi-los em um dashboard, **agora com autenticação**.
+
+**Endpoint**: GET /relatorio-diario/
+
+#### Requisitos:
+
+*   **Header de Autenticação**: `Authorization: Bearer`
+    
+
+A API retornará o relatório consolidado com as médias diárias por bairro e uma análise de riscos, no mesmo formato de antes. Caso o token seja inválido ou não seja fornecido, a API retornará 401 Unauthorized.
 ### Observações:
 
 - O backend está configurado com CORS para permitir requisições vindas de http://localhost:3000.
