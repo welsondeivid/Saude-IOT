@@ -1,7 +1,15 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cloud, Droplets, Leaf, Thermometer } from "lucide-react";
-import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from "recharts";
+import {
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Tooltip,
+} from "recharts";
 
 export const ClimaSection = ({ data }) => {
   if (!data) return null;
@@ -20,7 +28,12 @@ export const ClimaSection = ({ data }) => {
   ];
 
   const climaItems = [
-    { icon: Leaf, label: "Cobertura Vegetal", value: coberturaVegetal, unit: "%" },
+    {
+      icon: Leaf,
+      label: "Cobertura Vegetal",
+      value: coberturaVegetal,
+      unit: "%",
+    },
     { icon: Droplets, label: "Precipitação", value: precipitacao, unit: "mm" },
     { icon: Thermometer, label: "Temperatura", value: temperatura, unit: "°C" },
     { icon: Cloud, label: "Umidade", value: umidade, unit: "%" },
@@ -38,10 +51,18 @@ export const ClimaSection = ({ data }) => {
         <CardContent>
           <div className="w-full h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
+                
               <RadarChart data={radarData} outerRadius={110}>
                 <PolarGrid stroke="hsl(var(--border))" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: "hsl(var(--foreground))", fontSize: 12 }} />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                <PolarAngleAxis
+                  dataKey="subject"
+                  tick={{ fill: "hsl(var(--foreground))", fontSize: 12 }}
+                />
+                <PolarRadiusAxis
+                  angle={90}
+                  domain={[0, 100]}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                />
                 <Radar
                   name="Valores"
                   dataKey="value"
@@ -65,19 +86,20 @@ export const ClimaSection = ({ data }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {climaItems.map(({ icon: Icon, label, value, unit }) => (
-          <Card key={label} className="bg-gradient-card shadow-md hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <Icon className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">{label}</p>
-                  <p className="text-2xl font-bold">
-                    {Number(value).toFixed(2)}
-                    <span className="text-sm ml-1">{unit}</span>
-                  </p>
-                </div>
+          <Card
+            key={label}
+            className="bg-gradient-card shadow-md hover:shadow-lg transition-all duration-300 min-h-32 flex"
+          >
+            <CardContent className="p-6 flex items-center gap-4 w-full">
+              <div className="p-3 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Icon className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1 flex flex-col justify-center">
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="text-2xl font-bold">
+                  {Number(value).toFixed(2)}
+                  <span className="text-sm ml-1">{unit}</span>
+                </p>
               </div>
             </CardContent>
           </Card>

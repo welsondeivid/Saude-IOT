@@ -35,12 +35,12 @@ export const RiscosPanel = ({ riscos }) => {
   if (totalRiscos === 0) {
     return (
       <Card className="bg-gradient-success text-success-foreground shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
+        <CardContent className="flex align-center p-0">
+          <div className="flex items-center gap-4 p-6">
             <div className="p-3 rounded-full bg-white/20">
               <AlertTriangle className="h-8 w-8" />
             </div>
-            <div>
+            <div className="flex flex-col align-center">
               <h3 className="text-xl font-bold">Nenhum Risco Detectado</h3>
               <p className="text-sm opacity-90">
                 Todos os parâmetros estão dentro dos limites seguros.
