@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package saude;
+
+import "google/protobuf/struct.proto";
+
+message Empty {}
+
+service RelatorioService {
+  rpc ObterRelatorioDiario(Empty) returns (google.protobuf.Struct);
+}
