@@ -72,37 +72,6 @@ chmod +x start.sh
 # No Windows, instale as dependências e inicie o servidor:
 ./gui.sh
 ```
-Após isso, abra outra janela ou split o terminal, va ate a pasta server
-```bash
-# No macOS/Linux/windows:
-python main.py
-
-```
-### 4 Local do servidor
-Após a execução, o servidor estará rodando em http://127.0.0.1:8000
-e será reiniciado automaticamente a cada alteração no código (--reload).
-
-### 5. Teste no postman
-
-Este passo a passo usa o Postman para testar o middleware gRPC (porta 50051) que busca o relatório em http://127.0.0.1:8000/relatorio-diario e retorna como JSON.
-
-Pré-requisitos:
-- Backend FastAPI rodando em http://127.0.0.1:8000
-- Middleware gRPC Python rodando em localhost:50051
-
-1) Inicie o middleware gRPC
-No Windows ou linux:
-
-2) Abra o Postman e crie uma requisição gRPC
-- Clique em New > gRPC.
-- Em Server URL, digite: `localhost:50051` (plaintext, sem TLS).
-
-3) Importe o arquivo .proto
-- Clique em “Import .proto”.
-- Selecione: `proto/saude.proto` na pasta proto do projeto.
-- O Postman resolve automaticamente `google/protobuf/struct.proto` nas versões recentes.
-
-4) Selecione o serviço e método
 
 
 ## 📖 Documentação da API
