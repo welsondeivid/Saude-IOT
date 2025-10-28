@@ -2,7 +2,7 @@ import time
 import requests
 from .data_generator import gerar_bairro
 
-API_URL = "http://127.0.0.1:8000/importar-dados/"
+API_URL = "http://127.0.0.1:5000/ingest"
 
 class IoTSimulator:
     def __init__(self, bairros, intervalo=15):
@@ -19,6 +19,7 @@ class IoTSimulator:
             response = requests.post(API_URL, json=payload)
             return response.status_code, response.text
         except requests.RequestException as e:
+            print(e)
             return None, str(e)
 
     def loop_envio(self, log_func=print):
