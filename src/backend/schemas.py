@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Optional, Dict
 
 class ClimaSchema(BaseModel):
     temperatura_ar: float
@@ -26,3 +26,17 @@ class MedicaoSchema(BaseModel):
 
 class DadosBairroSchema(BaseModel):
     bairros: Dict[str, List[MedicaoSchema]]
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+class UserInDB(BaseModel):
+    username: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None

@@ -2,6 +2,9 @@ fastapi
 uvicorn[standard]
 pydantic
 sqlalchemy
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
 requests
 alembic==1.16.5
 blinker==1.9.0

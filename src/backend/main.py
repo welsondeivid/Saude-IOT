@@ -1,7 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from typing import Optional
 
 from . import models, schemas
 from .database import engine, get_db, SessionLocal
@@ -95,6 +100,104 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ======================================================================
+# CONFIGURAÇÕES DE AUTENTICAÇÃO
+# ======================================================================
+
+# Chave secreta para assinar o JWT (em um app de produção, use um segredo mais forte e carregue-o de uma variável de ambiente)
+SECRET_KEY = "Vv2pLnqtvG8GOYeOPw6wHWG8f9PDKqP9xw9CeEDx4Wz"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# ======================================================================
+# FUNÇÕES AUXILIARES DE AUTENTICAÇÃO
+# ======================================================================
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def get_user(db: Session, username: str):
+    return db.query(models.User).filter(models.User.username == username).first()
+
+# ======================================================================
+# DEPENDÊNCIA PARA OBTER O USUÁRIO ATUAL
+# ======================================================================
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = schemas.TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
+    user = get_user(db, username=token_data.username)
+    if user is None:
+        raise credentials_exception
+    return user
+
+# ======================================================================
+# ROTA DE LOGIN (TOKEN)
+# ======================================================================
+
+@app.post("/token", response_model=schemas.Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = get_user(db, form_data.username)
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+# ======================================================================
+# ROTA PARA CRIAR USUÁRIOS
+# ======================================================================
+
+@app.post("/users/", response_model=schemas.UserInDB)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = get_user(db, username=user.username)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    hashed_password = get_password_hash(user.password)
+    db_user = models.User(username=user.username, hashed_password=hashed_password)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+@app.get("/users/me/", response_model=schemas.UserInDB)
+async def read_users_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
+
 # ----------------------------------------------------------------------
 # FUNÇÃO AUXILIAR PARA ANÁLISE DE RISCOS
 # @ IKEL
@@ -134,7 +237,11 @@ def inferir_riscos(dados_diarios: dict):
 # @ ELIS
 # ----------------------------------------------------------------------
 @app.post("/importar-dados/")
-def importar_dados_bairros(dados: schemas.DadosBairroSchema, db: Session = Depends(get_db)):
+def importar_dados_bairros(
+    dados: schemas.DadosBairroSchema, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user) # <- Adicione esta linha
+):
     """
     Recebe os dados de saúde urbana dos bairros, valida com os schemas
     e insere de forma estruturada no banco de dados.
@@ -194,7 +301,10 @@ def importar_dados_bairros(dados: schemas.DadosBairroSchema, db: Session = Depen
 # @ ELIS / IKEL
 # ----------------------------------------------------------------------
 @app.get("/relatorio-diario/")
-def obter_relatorio_diario(db: Session = Depends(get_db)):
+def obter_relatorio_diario(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user)
+):
     """
     Endpoint principal que calcula as médias diárias dos indicadores por bairro,
     infere riscos e retorna um relatório completo.
@@ -237,3 +347,4 @@ def obter_relatorio_diario(db: Session = Depends(get_db)):
 @app.get("/")
 def read_root():
     return {"status": "API is running", "framework": "FastAPI"}
+
