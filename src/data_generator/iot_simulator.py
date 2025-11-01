@@ -19,7 +19,6 @@ class IoTSimulator:
             response = requests.post(API_URL, json=payload)
             return response.status_code, response.text
         except requests.RequestException as e:
-            print(e)
             return None, str(e)
 
     def loop_envio(self, log_func=print):

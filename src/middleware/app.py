@@ -78,15 +78,19 @@ def ingest():
     if 'bairros' not in payload or not isinstance(payload['bairros'], dict):
         return jsonify({"msg": "Corpo inválido: esperado objeto com chave 'bairros'"}), 400
 
+    access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3ZWxzb24iLCJleHAiOjE3NjIwMDEwMjR9.mODc3QWbE8Quw38J5UkTCXww-RJcEqwnlvFqlJQAHDk"
     try:
         # Faz requisição para o backend
         response = requests.post(
             f"{BACKEND_URL}/importar-dados/",
             json=payload,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {access_token}"
+            },
             timeout=30
         )
-        
+                
         if response.status_code == 200:
             return jsonify({
                 "msg": "Dados enviados com sucesso para o backend",
