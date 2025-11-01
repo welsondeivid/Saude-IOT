@@ -78,7 +78,12 @@ def ingest():
     if 'bairros' not in payload or not isinstance(payload['bairros'], dict):
         return jsonify({"msg": "Corpo inválido: esperado objeto com chave 'bairros'"}), 400
 
-    access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3ZWxzb24iLCJleHAiOjE3NjIwMDEwMjR9.mODc3QWbE8Quw38J5UkTCXww-RJcEqwnlvFqlJQAHDk"
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return jsonify({"msg": "Token de autorização não encontrado ou inválido"}), 401
+
+    access_token = auth_header.split(' ', 1)[1]  # Pega só o token, removendo 'Bearer '
+
     try:
         # Faz requisição para o backend
         response = requests.post(
@@ -91,7 +96,7 @@ def ingest():
             timeout=30
         )
                 
-        if response.status_code == 200:
+        if response.status_code == 201:
             return jsonify({
                 "msg": "Dados enviados com sucesso para o backend",
                 "backend_response": response.json()
