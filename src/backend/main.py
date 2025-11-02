@@ -89,6 +89,7 @@ def on_startup():
 origins = [
     "http://localhost:3000", # Adicione a porta que o React for usar
     "http://127.0.0.1:3000",
+    "http://localhost:5173",
     # Adicione aqui o domínio do front em produção, se tiver
 ]
 

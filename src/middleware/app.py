@@ -228,6 +228,54 @@ def list_medicoes(nome: str):
     return jsonify({"bairro": nb.name, "registros": data})
 
 
+@app.route('/relatorio-diario', methods=['GET'])
+def relatorio_diario():
+    """
+    Chama a rota relatorio-diario do backend e retorna o relatório completo.
+    Requer autenticação via token Bearer.
+    """
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return jsonify({"msg": "Token de autorização não encontrado ou inválido"}), 401
+
+    access_token = auth_header.split(' ', 1)[1]  # Pega só o token, removendo 'Bearer '
+
+    try:
+        # Faz requisição GET para o backend
+        response = requests.get(
+            f"{BACKEND_URL}/relatorio-diario/",
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            },
+            timeout=30
+        )
+                
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        else:
+            return jsonify({
+                "msg": "Erro ao obter relatório do backend",
+                "status_code": response.status_code,
+                "error": response.text
+            }), response.status_code
+            
+    except requests.exceptions.ConnectionError:
+        return jsonify({
+            "msg": "Erro de conexão com o backend",
+            "error": "Backend não está disponível"
+        }), 503
+    except requests.exceptions.Timeout:
+        return jsonify({
+            "msg": "Timeout na requisição para o backend",
+            "error": "Backend demorou muito para responder"
+        }), 504
+    except Exception as e:
+        return jsonify({
+            "msg": "Erro interno ao processar requisição",
+            "error": str(e)
+        }), 500
+
+
 @app.route('/riscos', methods=['GET'])
 def riscos():
     """
