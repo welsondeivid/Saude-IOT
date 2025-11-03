@@ -49,7 +49,9 @@ export async function getAuthToken(
  * @returns {Promise<Object>} Dados do relatório diário
  */
 export async function getRelatorioDiario(token = null) {
-    const authToken = token || cachedToken;
+    // Tenta usar token do localStorage primeiro, depois o passado, depois o cache, depois pega um novo
+    const storedToken = typeof window !== 'undefined' ? localStorage.getItem("access_token") : null;
+    const authToken = storedToken || token || cachedToken;
 
     if (!authToken) {
         // Tenta obter token automaticamente

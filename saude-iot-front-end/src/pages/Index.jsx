@@ -1,17 +1,30 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { getRelatorioDiario } from "@/services/api";
+import { logout, getUsername, isAuthenticated } from "@/services/authService";
 import { KPICard } from "@/components/KPICard";
 import { ClimaSection } from "@/components/ClimaSection";
 import { QualidadeArSection } from "@/components/QualidadeArSection";
 import { QualidadeAguaSection } from "@/components/QualidadeAguaSection";
 import { RiscosPanel } from "@/components/RiscosPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Thermometer, Droplets, Wind, Activity, MapPin, Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Thermometer, Droplets, Wind, Activity, MapPin, Loader2, AlertCircle, LogOut, User } from "lucide-react";
+import { toast } from "@/lib/toast";
 
 const Index = () => {
   const [bairroAtual, setBairroAtual] = useState(null);
   const [dataSelecionada, setDataSelecionada] = useState(null);
+  const navigate = useNavigate();
+  const username = getUsername();
+  const userLoggedIn = isAuthenticated();
+
+  const handleLogout = () => {
+    logout();
+    toast.success("Logout realizado com sucesso!");
+    navigate("/login");
+  };
 
   // Busca dados do relatório diário
   const { data: relatorioData, isLoading, error, refetch } = useQuery({
@@ -127,7 +140,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-card border-b border-border shadow-md">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-1">Dashboard de Predição Ambiental</h1>
               <p className="text-muted-foreground flex items-center gap-2">
@@ -135,7 +148,25 @@ const Index = () => {
                 {dataSelecionada ? `Dados de ${formatarData(dataSelecionada)}` : "Carregando..."}
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            {userLoggedIn && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  <span>{username}</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sair
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <div className="w-full sm:w-64">
                 <Select value={bairroAtual || ""} onValueChange={(value) => setBairroAtual(value)}>
                   <SelectTrigger className="bg-card shadow-sm">
@@ -168,7 +199,6 @@ const Index = () => {
               )}
             </div>
           </div>
-        </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">

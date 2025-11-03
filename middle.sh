@@ -15,7 +15,7 @@ fi
 
 # Ativa o ambiente virtual
 echo "📦 Ativando ambiente virtual..."
-source venv/Scripts/activate
+source venv/bin/activate
 
 # Verifica se está no ambiente virtual correto
 if [[ "$VIRTUAL_ENV" != *"Saude-IOT"* ]]; then
