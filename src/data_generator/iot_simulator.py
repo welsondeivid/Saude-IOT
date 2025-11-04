@@ -5,11 +5,13 @@ from .data_generator import gerar_bairro
 API_URL = "http://127.0.0.1:5000/ingest"
 
 class IoTSimulator:
-    def __init__(self, bairros, intervalo=15, token=None):
+    def __init__(self, bairros, intervalo=15, token=None, username=None, password=None):
         self.bairros = [b.strip() for b in bairros]
         self.intervalo = intervalo
         self.loop_ativo = False
-        self.token = token  # Armazena o token recebido
+        self.token = token
+        self.username = username
+        self.password = password
 
     def montar_payload(self):
         return {"bairros": {bairro: [gerar_bairro(bairro)] for bairro in self.bairros}}
@@ -19,6 +21,8 @@ class IoTSimulator:
         headers = {}
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
+        else:
+            payload["auth"] = {"username": self.username, "password": self.password}
 
         try:
             response = requests.post(API_URL, json=payload, headers=headers)

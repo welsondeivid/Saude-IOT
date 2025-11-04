@@ -20,10 +20,14 @@ class IoTSimulatorGUI:
         self.intervalo_entry.insert(0, "15")  # valor padrão
         self.intervalo_entry.pack(pady=5)
 
-        # *** NOVO: campo token ***
-        tk.Label(root, text="Token de Autenticação (Bearer):").pack(pady=5)
-        self.token_entry = tk.Entry(root, width=70, show="*")  # opcional: esconder o token
-        self.token_entry.pack(pady=5)
+        # Campos de autenticação (username e senha)
+        tk.Label(root, text="Usuário:").pack(pady=5)
+        self.username_entry = tk.Entry(root, width=40)
+        self.username_entry.pack(pady=2)
+
+        tk.Label(root, text="Senha:").pack(pady=5)
+        self.password_entry = tk.Entry(root, width=40, show="*")
+        self.password_entry.pack(pady=2)
 
         # Botões iniciar/parar
         self.start_button = tk.Button(root, text="Iniciar", command=self.iniciar_loop)
@@ -53,16 +57,16 @@ class IoTSimulatorGUI:
             tk.messagebox.showwarning("Atenção", "Intervalo inválido!")
             return
 
-        token = self.token_entry.get().strip()
-        if not token:
-            tk.messagebox.showwarning("Atenção", "Informe o token de autenticação!")
+        username = self.username_entry.get().strip()
+        password = self.password_entry.get().strip()
+        if not username or not password:
+            tk.messagebox.showwarning("Atenção", "Informe usuário e senha!")
             return
 
         self.start_button.config(state=tk.DISABLED)
         self.stop_button.config(state=tk.NORMAL)
 
-        # Passar o token para o simulador
-        self.simulator = IoTSimulator(bairros, intervalo=intervalo, token=token)
+        self.simulator = IoTSimulator(bairros, intervalo=intervalo, username=username, password=password)
 
         self.thread = threading.Thread(target=self.simulator.loop_envio, args=(self.log,), daemon=True)
         self.thread.start()

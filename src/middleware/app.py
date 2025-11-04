@@ -10,8 +10,7 @@ app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 
-# Configuração do backend
-BACKEND_URL = "http://localhost:8000"  # URL do backend FastAPI
+BACKEND_URL = "http://localhost:8000"
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -65,7 +64,7 @@ def _ensure_neighborhood(name: str) -> Neighborhood:
         return nb
     nb = Neighborhood(name=name)
     db.session.add(nb)
-    db.session.flush()  # get id without full commit
+    db.session.flush()
     return nb
 
 
@@ -79,13 +78,30 @@ def ingest():
         return jsonify({"msg": "Corpo inválido: esperado objeto com chave 'bairros'"}), 400
 
     auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
-        return jsonify({"msg": "Token de autorização não encontrado ou inválido"}), 401
-
-    access_token = auth_header.split(' ', 1)[1]  # Pega só o token, removendo 'Bearer '
+    access_token = None
+    if auth_header.startswith('Bearer '):
+        access_token = auth_header.split(' ', 1)[1]
+    else:
+        auth_payload = payload.get('auth') or {}
+        username = auth_payload.get('username')
+        password = auth_payload.get('password')
+        if not username or not password:
+            return jsonify({"msg": "Credenciais ausentes. Informe Authorization Bearer ou auth.username/password no corpo."}), 401
+        try:
+            resp = requests.post(
+                f"{BACKEND_URL}/token",
+                data={"username": username, "password": password},
+                timeout=15
+            )
+            if resp.status_code != 200:
+                return jsonify({"msg": "Falha ao autenticar no backend", "status_code": resp.status_code, "error": resp.text}), 401
+            access_token = resp.json().get('access_token')
+            if not access_token:
+                return jsonify({"msg": "Token não retornado pelo backend"}), 500
+        except requests.RequestException as e:
+            return jsonify({"msg": "Erro ao contatar backend para autenticação", "error": str(e)}), 502
 
     try:
-        # Faz requisição para o backend
         response = requests.post(
             f"{BACKEND_URL}/importar-dados/",
             json=payload,
@@ -154,13 +170,35 @@ def ingest_v2():
     payload: Dict[str, Any] = request.get_json(silent=True) or {}
     if 'bairros' not in payload or not isinstance(payload['bairros'], dict):
         return jsonify({"msg": "Corpo inválido: esperado objeto com chave 'bairros'"}), 400
+    auth_header = request.headers.get('Authorization', '')
+    access_token = None
+    if auth_header.startswith('Bearer '):
+        access_token = auth_header.split(' ', 1)[1]
+    else:
+        auth_payload = payload.get('auth') or {}
+        username = auth_payload.get('username')
+        password = auth_payload.get('password')
+        if not username or not password:
+            return jsonify({"msg": "Credenciais ausentes. Informe Authorization Bearer ou auth.username/password no corpo."}), 401
+        try:
+            resp = requests.post(
+                f"{BACKEND_URL}/token",
+                data={"username": username, "password": password},
+                timeout=15
+            )
+            if resp.status_code != 200:
+                return jsonify({"msg": "Falha ao autenticar no backend", "status_code": resp.status_code, "error": resp.text}), 401
+            access_token = resp.json().get('access_token')
+            if not access_token:
+                return jsonify({"msg": "Token não retornado pelo backend"}), 500
+        except requests.RequestException as e:
+            return jsonify({"msg": "Erro ao contatar backend para autenticação", "error": str(e)}), 502
 
     try:
-        # Faz requisição para o backend
         response = requests.post(
             f"{BACKEND_URL}/importar-dados/",
             json=payload,
-            headers={"Content-Type": "application/json"},
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {access_token}"},
             timeout=30
         )
         
@@ -241,7 +279,6 @@ def relatorio_diario():
     access_token = auth_header.split(' ', 1)[1]  # Pega só o token, removendo 'Bearer '
 
     try:
-        # Faz requisição GET para o backend
         response = requests.get(
             f"{BACKEND_URL}/relatorio-diario/",
             headers={
