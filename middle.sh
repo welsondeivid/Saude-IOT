@@ -13,9 +13,16 @@ if [ ! -d "venv" ]; then
     exit 1
 fi
 
-# Ativa o ambiente virtual
+# Ativa o ambiente virtual (detecta Windows ou Linux/Mac)
 echo "📦 Ativando ambiente virtual..."
-source venv/bin/activate
+if [ -f "venv/Scripts/activate" ]; then
+    source venv/Scripts/activate
+elif [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+else
+    echo "❌ Arquivo de ativação do ambiente virtual não encontrado!"
+    exit 1
+fi
 
 # Verifica se está no ambiente virtual correto
 if [[ "$VIRTUAL_ENV" != *"Saude-IOT"* ]]; then

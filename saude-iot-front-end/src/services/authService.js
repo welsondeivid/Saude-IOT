@@ -23,11 +23,11 @@ export async function login(username, password) {
         }
 
         const data = await response.json();
-        
+
         // Salva o token no localStorage
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("username", username);
-        
+
         return data.access_token;
     } catch (error) {
         console.error("Erro ao fazer login:", error);

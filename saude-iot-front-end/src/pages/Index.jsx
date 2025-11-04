@@ -23,7 +23,7 @@ const Index = () => {
   const handleLogout = () => {
     logout();
     toast.success("Logout realizado com sucesso!");
-    navigate("/login");
+    navigate("/");
   };
 
   // Busca dados do relatório diário
